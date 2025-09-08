@@ -1,0 +1,30 @@
+{
+  "name": "@drumee/shell",
+  "version": "0.0.0",
+  "description": "Drumee Server Utilities",
+  "main": "index.js",
+  "scripts": {
+    "release": "git push && npm publish --access public && npm version patch",
+    "dev": "drumee-server-devel"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:drumee/shell.git"
+  },
+  "bugs": {
+    "url": "https://github.com/drumee/shell/issues"
+  },
+  "author": "Somanos Sar <somanos@drumee.com>",
+  "license": "AGPL V3",
+  "devDependencies": {
+    "@drumee/server-dev-tools": "^1.1.21",
+    "readline-sync": "^1.4.10"
+  },
+  "dependencies": {
+    "@drumee/server-core": "^1.1.24",
+    "@drumee/server-essentials": "^1.1.34",
+    "argparse": "^2.0.1",
+    "shelljs": "^0.8.5",
+    "unique-names-generator": "^4.7.1"
+  }
+}
