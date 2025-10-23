@@ -1,8 +1,5 @@
 const { toArray, Mariadb, Cache, RedisStore, Messenger } = require("@drumee/server-essentials");
 
-// --- SỬA TẠI ĐÂY: Thêm 'host: '127.0.0.1'' ---
-// Điều này buộc script kết nối vào CSDL "chính" (primary)
-// giống hệt như terminal 'mariadb' của bạn.
 const yp = new Mariadb({
   name: 'yp',
   user: process.env.USER,
@@ -10,16 +7,11 @@ const yp = new Mariadb({
   autocommit: true,
   host: '127.0.0.1'
 });
-// --- KẾT THÚC SỬA ---
 
 const { exit } = process;
 const args = require('./args/media')
 
-
-/**
- * Sends a simple notification email.
- * (Hàm sendNotificationEmail vẫn giữ nguyên như cũ)
- */
+// Function to send notification emails 
 async function sendNotificationEmail(recipientsArray, subjectText, bodyText) {
   if (!recipientsArray || recipientsArray.length === 0) {
     console.log("    -> No recipients, skipping email send.");
@@ -49,30 +41,30 @@ async function sendNotificationEmail(recipientsArray, subjectText, bodyText) {
 async function main() {
   let res = new RedisStore();
   await res.init();
-  let ph = [];
-  let sql, data;
+  const jsonArgs = JSON.stringify({ pagelength: 100 });
 
   switch (args.command) {
 
     case "list":
-      console.log("Listing 100 unprocessed notification events...");
-      data = toArray(await yp.await_proc('push_mfs_events', {}));
+      console.log("Listing 100 unprocessed notification events (using SP)...");
+      const [listData] = await yp.await_query('CALL yp.push_mfs_events(?)', [jsonArgs]);
 
-      if (data.length === 0) {
+      if (!Array.isArray(listData) || listData.length === 0) {
         console.log('No new file events.');
       } else {
-        console.log(`Found ${data.length} new events:`);
-        for (let r of data) {
-          console.log(`  - ID: ${r.id}, Hub: ${r.hub_id}, User: ${r.uid}, Action: ${r.event}`);
+        console.log(`Found ${listData.length} new events:`);
+        for (let r of listData) {
+          console.log(`  - ID: ${r.id}, Hub: ${r.hub_id}, User: ${r.uid}, DB_Name: ${r.db_name}`);
         }
       }
       break;
 
     case "update":
-      console.log('Starting scan to send file event notifications...');
-      // const events = toArray(await yp.await_query(sql));
-      const events = toArray(await yp.await_proc('push_mfs_events', {}));
-      if (events.length === 0) {
+      console.log('Starting scan to send file event notifications (using SP)...');
+      const [events_array] = await yp.await_query('CALL yp.push_mfs_events(?)', [jsonArgs]);
+      const events = events_array;
+
+      if (!Array.isArray(events) || events.length === 0) {
         console.log('No new events to process.');
         break;
       }
@@ -80,37 +72,32 @@ async function main() {
 
       for (const event of events) {
         console.log(`---`);
-        console.log(`Event ID ${event.id} (Hub: ${event.hub_id}, User: ${event.uid}, Op: ${event.event})`);
+        console.log(`Event ID ${event.id} (Hub: ${event.hub_id}, User: ${event.uid}, Op: ${event.event}, DB_Name: ${event.db_name})`); // Added Op: event.event for clarity
         const { db_name } = event;
-        let members = await yp.await_proc(`${db_name}.show_all_members`)
-        try {
-          for (const member of members) {
-            console.log("Member-->", member)
-          }
-          // const users = await yp.await_query(
-          //   `SELECT u.id, u.email 
-          //    FROM yp.drumate u 
-          //    JOIN yp.membership m ON u.id = m.drumate_id
-          //    WHERE m.hub_id = ?`,
-          //   [event.hub_id]
-          // );
-          // const recipients = users.filter(user => user.id !== event.uid);
-          // if (recipients.length > 0) {
-          //   const emailList = recipients.map(user => user.email);
-          //   console.log("AAA:97", emailList)
-          //   console.log(` -> Found ${emailList.length} recipients (excluding user ${event.uid})`);
-          //   const subject = `[Drumee] File Notification: [${event.event}]`;
-          //   const body = `Hello,\n\nA file was just [${event.event}] in hub (ID: ${event.hub_id}) by user (ID: ${event.uid}).\n\nRegards,`;
-          //   await sendNotificationEmail(emailList, subject, body);
-          // } else {
-          //   console.log(` -> No recipients (only the triggerer is in the hub).`);
-          // }
 
-          // await yp.await_query(
-          //   'UPDATE yp.mfs_changelog SET is_notified = TRUE WHERE id = ?',
-          //   [event.id]
-          // );
-          // console.log(` -> Processed and marked ID ${event.id} as is_notified = TRUE.`);
+        try {
+          let members = await yp.await_proc(`${db_name}.show_all_members`);
+          members = toArray(members);
+
+          const recipients = members.filter(member => member.id !== event.uid);
+
+          if (recipients.length > 0) {
+            const emailList = recipients.map(member => member.email);
+            console.log(` -> Found ${emailList.length} recipients (excluding user ${event.uid})`);
+            const subject = `[Drumee] File Notification: [${event.event}]`;
+            const body = `Hello,\n\nA file was just [${event.event}] in hub (ID: ${event.hub_id}) by user (ID: ${event.uid}).\n\nRegards,`;
+            await sendNotificationEmail(emailList, subject, body);
+          } else {
+            console.log(` -> No recipients (only the triggerer is in the hub).`);
+          }
+
+          await yp.await_query(
+            'INSERT INTO yp.push_notification (id, sent) VALUES (?, 1) ON DUPLICATE KEY UPDATE sent = 1',
+            [event.id]
+          );
+          console.log(` -> Processed and marked ID ${event.id} in push_notification table (sent=1).`);
+
+
         } catch (jobError) {
           console.error(`  ERROR: Failed to process event ID ${event.id}:`, jobError);
         }
@@ -125,7 +112,6 @@ async function main() {
   }
 }
 
-// Initialize the script
 Cache.load(yp)
   .then(main)
   .catch(err => {
