@@ -1,4 +1,4 @@
-const Organization = require("../service/lib/organization");
+const Organization = require("./lib/organization");
 const { Mariadb, Cache } = require("@drumee/server-essentials");
 const yp = new Mariadb({ name: 'yp', user: process.env.USER, idleTimeout: 60 });
 const { exit } = process;
