@@ -4,7 +4,7 @@ const yp = new Mariadb({ name: 'yp', user: process.env.USER, idleTimeout: 60 });
 const { exit } = process;
 const args = require('./args/user')
 Cache.load(yp).then(async () => {
-  const org = new Organization({ yp, db });
+  const org = new Organization({ yp });
   if (ARGV.id) {
     await org.remove({ id: ARGV.id });
   } else {

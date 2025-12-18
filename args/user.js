@@ -29,6 +29,30 @@ parser.add_argument("--email", {
 	help: "Email",
 });
 
+parser.add_argument("--firstname", {
+	type: String,
+	default: '',
+	help: "firstname",
+});
+
+parser.add_argument("--lastname", {
+	type: String,
+	default: '',
+	help: "lastname",
+});
+
+parser.add_argument("--password", {
+	type: String,
+	default: '',
+	help: "password",
+});
+
+parser.add_argument("--lang", {
+	type: String,
+	default: 'en',
+	help: "Uer language",
+});
+
 parser.add_argument("--vhost", {
 	type: String,
 	default: '',

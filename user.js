@@ -10,6 +10,7 @@ Cache.load(yp).then(async () => {
   await res.init()
   let ph = []
   let sql, data;
+  let drumate;
   switch (args.command) {
     case "list":
       sql = `SELECT id, email, fullname, profile FROM drumate WHERE`;
@@ -32,9 +33,22 @@ Cache.load(yp).then(async () => {
         console.log("Require root privilege")
         exit(1)
       }
-      let drumate = new Drumate({ yp })
+      drumate = new Drumate({ yp })
       if (args.email) {
         await drumate.remove(args)
+      } else {
+        console.log("Email is required")
+      }
+      break;
+    case "add":
+      drumate = new Drumate({ yp })
+      if (args.email) {
+        let res = await drumate.create(args);
+        if(res.error){
+          console.log("Failed to create user", res)
+        }else{
+          console.log("User created", res)
+        }
       } else {
         console.log("Email is required")
       }
