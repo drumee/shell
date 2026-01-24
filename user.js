@@ -1,4 +1,4 @@
-const { Mariadb, Cache, RedisStore} = require("@drumee/server-essentials");
+const { Mariadb, Cache, RedisStore } = require("@drumee/server-essentials");
 const Drumate = require("./lib/drumate");
 const { userInfo } = require('os')
 const yp = new Mariadb({ name: 'yp', user: process.env.USER, idleTimeout: 60 });
@@ -35,6 +35,7 @@ Cache.load(yp).then(async () => {
       }
       drumate = new Drumate({ yp })
       if (args.email) {
+        console.log(`Removing user ${args.email}`)
         await drumate.remove(args)
       } else {
         console.log("Email is required")
@@ -44,9 +45,9 @@ Cache.load(yp).then(async () => {
       drumate = new Drumate({ yp })
       if (args.email) {
         let res = await drumate.create(args);
-        if(res.error){
+        if (res.error) {
           console.log("Failed to create user", res)
-        }else{
+        } else {
           console.log("User created", res)
         }
       } else {
