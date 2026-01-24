@@ -1,6 +1,6 @@
 {
   "name": "@drumee/shell",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Drumee Server Utilities",
   "main": "index.js",
   "scripts": {
