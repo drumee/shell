@@ -3,6 +3,9 @@
   "version": "0.0.5",
   "description": "Drumee Server Utilities",
   "main": "index.js",
+  "bin": {
+    "drumee-cli": "./drumee-cli.js"
+  },
   "scripts": {
     "release": "git push && npm publish --access public && npm version patch",
     "dev": "drumee-server-devel"
@@ -23,6 +26,10 @@
   "dependencies": {
     "@drumee/server-core": "^1.1.38",
     "@drumee/server-essentials": "^1.2.10",
+    "check-disk-space": "^3.4.0",
+    "jsonfile": "^5.0.0",
+    "lodash": "^4.17.21",
+    "punycode": "^2.3.1",
     "argparse": "^2.0.1",
     "shelljs": "^0.8.5",
     "unique-names-generator": "^4.7.1"
