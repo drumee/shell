@@ -53,6 +53,11 @@ parser.add_argument("--lang", {
 	help: "Uer language",
 });
 
+parser.add_argument("--skip-mfs-removal", {
+	type : 'int',
+	default: 1,
+	help: "No MFS removal if set",
+});
 parser.add_argument("--vhost", {
 	type: String,
 	default: '',
